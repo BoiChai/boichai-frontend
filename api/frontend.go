@@ -21,7 +21,7 @@ func contact(c echo.Context) error {
 }
 
 func privacyPolicy(c echo.Context) error {
-	return c.Render(http.StatusOK, "index.html", echo.Map{})
+	return c.Render(http.StatusOK, "privacy.html", echo.Map{})
 }
 
 func faq(c echo.Context) error {

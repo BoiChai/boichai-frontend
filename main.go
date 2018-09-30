@@ -1,6 +1,6 @@
 package main
 
-import "bitbucket.org/boichai/boichai-frontend/api"
+import "github.com/BoiChai/boichai-frontend/api"
 
 /**
  * := Coded with love by Sakib Sami on 25/5/18.

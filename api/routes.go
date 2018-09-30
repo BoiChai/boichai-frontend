@@ -1,12 +1,12 @@
 package api
 
 import (
+	"github.com/BoiChai/boichai-frontend/templates"
 	"github.com/labstack/echo"
-	"bitbucket.org/boichai/boichai-frontend/templates"
-	"html/template"
-	"github.com/labstack/gommon/log"
-	"os"
 	"github.com/labstack/echo/middleware"
+	"github.com/labstack/gommon/log"
+	"html/template"
+	"os"
 )
 
 /**
@@ -40,4 +40,5 @@ func setupFrontendRoutes() {
 	e.GET("/", index)
 	e.GET("/index", index)
 	e.GET("/contact", contact)
+	e.GET("/privacy-policy", privacyPolicy)
 }
