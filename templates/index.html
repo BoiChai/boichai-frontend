@@ -1,0 +1,40 @@
+{{define "index"}}
+<!DOCTYPE html>
+<html lang="en">
+
+{{template "nav" .}}
+
+<section class="banner">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 m-auto">
+                <!-- Banner Contents -->
+                <div class="block text-center">
+                    <h1>The new way to buy and sell books online.</h1>
+                    <p>Boi Chai offers you the easiest way to buy and sell old or new books online within few press.
+                    </p>
+                    <!-- Go to App page -->
+                    <ul class="list-inline app-badge">
+                        <!-- Apple Store -->
+                        <!-- <li class="list-inline-item">
+                            <a href="#"><img src="images/app/appple-store.png" alt="Apple Store"></a>
+                        </li> -->
+                        <!-- Google Play -->
+                        <li class="list-inline-item">
+                            <a href="#"><img src="static/images/app/google-play.png" alt="Google Play"></a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!--============================
+=            Footer            =
+=============================-->
+
+{{template "footer"}}
+
+</html>
+{{end}}

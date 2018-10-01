@@ -1,0 +1,32 @@
+{{define "nav"}}
+
+{{template "header" .}}
+
+<body class="body-wrapper">
+
+<nav class="navbar main-nav navbar-expand-lg p-0">
+    <div class="container">
+        <a class="navbar-brand" href="/"><img src="static/images/logo.png" alt="logo"></a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="tf-ion-android-menu"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item dropdown dropdown-slide {{ .home }}">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                <li class="nav-item {{ .contact }}">
+                    <a class="nav-link" href="contact">Contact</a>
+                </li>
+                <li class="nav-item {{ .privacy }}">
+                    <a class="nav-link" href="privacy-policy">Privacy Policy</a>
+                </li>
+                <li class="nav-item {{ .faq }}">
+                    <a class="nav-link" href="faq">FAQ</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+{{end}}

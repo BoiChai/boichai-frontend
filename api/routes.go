@@ -1,12 +1,10 @@
 package api
 
 import (
-	"github.com/BoiChai/boichai-frontend/templates"
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
-	"github.com/labstack/gommon/log"
-	"html/template"
+	"github.com/gin-gonic/gin"
+	"net/http"
 	"os"
+	"fmt"
 )
 
 /**
@@ -16,29 +14,32 @@ import (
  * := Coffee : Dream : Code
  */
 
-var e *echo.Echo
+var routes *gin.Engine
 
-func InitWebServer() {
-	e = echo.New()
-	e.Logger.SetLevel(log.INFO)
-	e.Logger.SetOutput(os.Stdout)
-	e.Use(middleware.Logger())
-	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
-		Root:   "templates/public/",
-		Browse: false,
-	}))
+func NewRoutes() {
+	gin.SetMode(os.Getenv("BUILD_KIND"))
 
-	e.Renderer = &templates.BoiChaiTemplateRenderer{
-		Templates: template.Must(template.ParseGlob("templates/views/*.html")),
+	routes = gin.Default()
+	routes.Use(gin.Logger())
+	routes.Use(gin.Recovery())
+
+	if gin.IsDebugging() {
+		routes.LoadHTMLGlob("templates/*")
+		routes.Static("/static", "./public")
+	} else {
+		routes.LoadHTMLGlob("/etc/templates/*")
+		routes.Static("/static", "/etc/public")
 	}
 
-	setupFrontendRoutes()
-	e.Logger.Fatal(e.Start(":9092"))
-}
+	routes.GET("/", index)
+	routes.GET("/contact", contact)
+	routes.GET("/privacy-policy", privacyPolicy)
 
-func setupFrontendRoutes() {
-	e.GET("/", index)
-	e.GET("/index", index)
-	e.GET("/contact", contact)
-	e.GET("/privacy-policy", privacyPolicy)
+	server := http.Server{
+		Addr:    ":9080",
+		Handler: routes,
+	}
+
+	fmt.Println("Web server running...")
+	server.ListenAndServe()
 }

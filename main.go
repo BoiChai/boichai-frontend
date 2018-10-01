@@ -10,5 +10,5 @@ import "github.com/BoiChai/boichai-frontend/api"
  */
 
 func main() {
-	api.InitWebServer()
+	api.NewRoutes()
 }

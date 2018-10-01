@@ -1,0 +1,10 @@
+version: '3.1'
+
+services:
+  boichai-frontend:
+    image: boichai-frontend:latest
+    restart: always
+    ports:
+      - 9080:9080
+    environment:
+      BUILD_KIND: release
