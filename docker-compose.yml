@@ -2,9 +2,9 @@ version: '3.1'
 
 services:
   boichai-frontend:
-    image: boichai-frontend:latest
+    image: repo.treescale.com/boichaiapp/frontend:1.0.0
     restart: always
     ports:
-      - 9080:9080
+    - 9080:9080
     environment:
       BUILD_KIND: release
