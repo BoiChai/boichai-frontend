@@ -1,5 +1,6 @@
 package ninja.sakib.flashload.consumer
 
+import com.eclipsesource.json.Json
 import de.jupf.staticlog.Log
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -10,7 +11,7 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 import java.lang.Exception
 import kotlin.properties.Delegates
 
-class FlashLoadClient(var clientId: String, var username: String, var password: String, var tracer: FlashLoadTracer) : MqttCallback {
+class FlashLoadClient(var clientId: String, var username: String, var password: String, var tracer: FlashLoadTracer, var mqttUrl: String) : MqttCallback {
     private var client: MqttClient by Delegates.notNull()
 
     fun connect(): Job {
@@ -23,14 +24,13 @@ class FlashLoadClient(var clientId: String, var username: String, var password: 
         options.keepAliveInterval = 60
         options.isAutomaticReconnect = true
 
-        client = MqttClient("tcp://35.154.124.33:1883", clientId, MemoryPersistence())
+        client = MqttClient(mqttUrl, clientId, MemoryPersistence())
         client.setCallback(this)
 
         return GlobalScope.launch {
             try {
                 client.connect(options)
-                Log.info("[Client = $clientId] has been connected.")
-                tracer.onClientConnected(clientId)
+                Log.info("[Client = $clientId] connection request has been sent successfully.")
             } catch (e: Exception) {
                 Log.info("[Client = $clientId] failed to connect [error = ${e.message}].")
             }
@@ -38,8 +38,25 @@ class FlashLoadClient(var clientId: String, var username: String, var password: 
     }
 
     override fun messageArrived(topic: String?, message: MqttMessage?) {
-        Log.info("[Client = $clientId] received new message [topic = $topic].")
-        tracer.onMessageReceived(this.clientId, topic!!, String(message!!.payload))
+        try {
+            if (message != null) {
+                Log.info("[Client = $clientId] received new message [topic = $topic] - [message = ${String(message.payload)}].")
+
+                val pld = Json.parse(String(message.payload)).asObject()
+                val action = pld.get("action").asString()
+
+                when (action) {
+                    "client_connected" -> {
+                        tracer.onClientConnected(clientId)
+                    }
+                    "message_published" -> {
+                        tracer.onMessageReceived(this.clientId, topic!!, String(message.payload))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.error("Message received with error ${e.message}")
+        }
     }
 
     override fun connectionLost(cause: Throwable?) {
@@ -48,6 +65,14 @@ class FlashLoadClient(var clientId: String, var username: String, var password: 
     }
 
     override fun deliveryComplete(token: IMqttDeliveryToken?) {
+    }
+
+    fun disconnect() {
+        if (client.isConnected) {
+            Log.info("[Client = $clientId] Disconnecting")
+            client.disconnectForcibly()
+            tracer.onClientDisconnected(this.clientId)
+        }
     }
 
     fun isConnected(): Boolean {

@@ -9,6 +9,7 @@ import ninja.sakib.flashload.consumer.FlashLoadClient
 import ninja.sakib.flashload.report.SqliteTracer
 import java.io.File
 import java.io.FileReader
+import java.lang.Exception
 
 suspend fun main(args: Array<String>) {
     val db = SqliteTracer
@@ -23,8 +24,10 @@ suspend fun main(args: Array<String>) {
 
     val mqttURL = config.get("mqtt_uri").asString()
     val maxConnect = config.get("max_connect").asInt()
-    val batchInterval = config.get("batch_interval").asString()
+    val batchInterval = config.get("batch_interval").asInt()
     val batchLimit = config.get("batch_limit").asInt()
+    var batchCount = 0
+    var connectedCount = 0
 
     val connectedClients: MutableList<FlashLoadClient> = mutableListOf()
     val runningJobs: MutableList<Job> = mutableListOf()
@@ -41,10 +44,30 @@ suspend fun main(args: Array<String>) {
         Log.info("Username = $username")
         Log.info("Password = $password")
 
-        val client = FlashLoadClient(clientId, username, password, db)
+        val client = FlashLoadClient(clientId, username, password, db, mqttURL)
         runningJobs.add(client.connect())
         connectedClients.add(client)
+
+        connectedCount++
+        batchCount++
+
+        if (connectedCount >= maxConnect) {
+            break
+        }
+        if (batchCount == batchLimit) {
+            try {
+                Thread.sleep(1000.toLong() * batchInterval)
+            } catch (e: Exception) {
+
+            }
+        }
     }
+
+    Runtime.getRuntime().addShutdownHook(object : Thread() {
+        override fun run() {
+            doOnAppClosing(connectedClients)
+        }
+    })
 
     GlobalScope.launch {
         for (j in runningJobs) {
@@ -54,6 +77,13 @@ suspend fun main(args: Array<String>) {
 
     while (isClientsConnected(clients = connectedClients)) {
         Thread.sleep(1000 * 5)
+    }
+}
+
+private fun doOnAppClosing(clients: MutableList<FlashLoadClient>) {
+    Log.info("Detected shutdown event. Closing connections...")
+    for (c in clients) {
+        c.disconnect()
     }
 }
 
