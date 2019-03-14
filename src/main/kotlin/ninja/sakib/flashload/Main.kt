@@ -85,6 +85,7 @@ private fun doOnAppClosing(clients: MutableList<FlashLoadClient>) {
     for (c in clients) {
         c.disconnect()
     }
+    Thread.sleep(5 * 1000)
 }
 
 private fun isClientsConnected(clients: MutableList<FlashLoadClient>): Boolean {

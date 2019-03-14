@@ -68,10 +68,16 @@ class FlashLoadClient(var clientId: String, var username: String, var password: 
     }
 
     fun disconnect() {
-        if (client.isConnected) {
-            Log.info("[Client = $clientId] Disconnecting")
-            client.disconnectForcibly()
-            tracer.onClientDisconnected(this.clientId)
+        GlobalScope.launch {
+            try {
+                if (client.isConnected) {
+                    Log.info("[Client = $clientId] Disconnecting")
+                    client.disconnect()
+                    tracer.onClientDisconnected(clientId)
+                }
+            } catch (e: Exception) {
+                Log.info("[Client = $clientId] Disconnecting failed. [error = ${e.message}]")
+            }
         }
     }
 
