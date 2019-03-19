@@ -12,9 +12,9 @@ import java.lang.Exception
 import kotlin.properties.Delegates
 
 class FlashLoadClient(var clientId: String, var username: String, var password: String, var tracer: FlashLoadTracer, var mqttUrl: String) : MqttCallback {
-    private var client: MqttClient by Delegates.notNull()
+    private var client: MqttClient? = null
 
-    fun connect(): Job {
+    fun connect() {
         val options = MqttConnectOptions()
         options.userName = username
         options.password = password.toCharArray()
@@ -25,15 +25,12 @@ class FlashLoadClient(var clientId: String, var username: String, var password: 
         options.isAutomaticReconnect = true
 
         client = MqttClient(mqttUrl, clientId, MemoryPersistence())
-        client.setCallback(this)
-
-        return GlobalScope.launch {
-            try {
-                client.connect(options)
-                Log.info("[Client = $clientId] connection request has been sent successfully.")
-            } catch (e: Exception) {
-                Log.info("[Client = $clientId] failed to connect [error = ${e.message}].")
-            }
+        client!!.setCallback(this)
+        try {
+            client!!.connect(options)
+            Log.info("[Client = $clientId] connection request has been sent successfully.")
+        } catch (e: Exception) {
+            Log.info("[Client = $clientId] failed to connect [error = ${e.message}].")
         }
     }
 
@@ -68,20 +65,18 @@ class FlashLoadClient(var clientId: String, var username: String, var password: 
     }
 
     fun disconnect() {
-        GlobalScope.launch {
-            try {
-                if (client.isConnected) {
-                    Log.info("[Client = $clientId] Disconnecting")
-                    client.disconnect()
-                    tracer.onClientDisconnected(clientId)
-                }
-            } catch (e: Exception) {
-                Log.info("[Client = $clientId] Disconnecting failed. [error = ${e.message}]")
+        try {
+            if (client != null && client!!.isConnected) {
+                Log.info("[Client = $clientId] Disconnecting")
+                client!!.disconnect()
+                tracer.onClientDisconnected(clientId)
             }
+        } catch (e: Exception) {
+            Log.info("[Client = $clientId] Disconnecting failed. [error = ${e.message}]")
         }
     }
 
     fun isConnected(): Boolean {
-        return client.isConnected
+        return client != null && client!!.isConnected
     }
 }

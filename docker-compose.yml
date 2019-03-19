@@ -1,0 +1,6 @@
+version: '3'
+
+services:
+  flash-load-java:
+    image: datacultr/push-broker:flash-load-java-0.1.1
+    command: ["java", "-jar", "./libs/flash-load-1.2.jar", "./config5k.json", "–Xms64k", "-XX:MaxPermSize=10M", "–Xmx128k", "-Xss128k"]

@@ -2,16 +2,15 @@ package ninja.sakib.flashload
 
 import com.eclipsesource.json.Json
 import de.jupf.staticlog.Log
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import ninja.sakib.flashload.consumer.FlashLoadClient
 import ninja.sakib.flashload.report.SqliteTracer
 import java.io.File
 import java.io.FileReader
-import java.lang.Exception
 
-suspend fun main(args: Array<String>) {
+fun main(args: Array<String>) = runBlocking {
     val db = SqliteTracer
 
     if (args.isEmpty()) {
@@ -29,10 +28,20 @@ suspend fun main(args: Array<String>) {
     var batchCount = 0
     var connectedCount = 0
 
+    Log.info("URL : $mqttURL")
+    Log.info("Target : $maxConnect")
+    Log.info("Interval : $batchInterval")
+    Log.info("BatchLimit : $batchLimit")
+
+
     val connectedClients: MutableList<FlashLoadClient> = mutableListOf()
-    val runningJobs: MutableList<Job> = mutableListOf()
 
     val clients = config.get("clients").asArray()
+
+    Log.info("Clients configured : ${clients.size()}")
+    Log.info("===========================")
+    Log.info("===========================")
+
     for (c in clients) {
         val cfg = c.asObject()
         val clientId = cfg.get("client_id").asString()
@@ -45,20 +54,27 @@ suspend fun main(args: Array<String>) {
         Log.info("Password = $password")
 
         val client = FlashLoadClient(clientId, username, password, db, mqttURL)
-        runningJobs.add(client.connect())
+        launch {
+            client.connect()
+        }
         connectedClients.add(client)
 
         connectedCount++
         batchCount++
 
         if (connectedCount >= maxConnect) {
+            Log.info("Connection Requested : $connectedCount, Actual : ${connectedClients.size}")
             break
         }
         if (batchCount == batchLimit) {
+            Log.info("Batch reached : $batchLimit, with interval : $batchInterval s")
+
             try {
                 Thread.sleep(1000.toLong() * batchInterval)
             } catch (e: Exception) {
-
+                Log.info("Thread interrupted [msg=${e.message}]")
+            } finally {
+                batchCount = 0
             }
         }
     }
@@ -69,23 +85,16 @@ suspend fun main(args: Array<String>) {
         }
     })
 
-    GlobalScope.launch {
-        for (j in runningJobs) {
-            j.join()
-        }
-    }.join()
-
-    while (isClientsConnected(clients = connectedClients)) {
-        Thread.sleep(1000 * 5)
-    }
+    joinAll()
 }
 
-private fun doOnAppClosing(clients: MutableList<FlashLoadClient>) {
+private fun doOnAppClosing(clients: MutableList<FlashLoadClient>) = runBlocking {
     Log.info("Detected shutdown event. Closing connections...")
     for (c in clients) {
-        c.disconnect()
+        launch {
+            c.disconnect()
+        }
     }
-    Thread.sleep(5 * 1000)
 }
 
 private fun isClientsConnected(clients: MutableList<FlashLoadClient>): Boolean {
